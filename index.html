@@ -673,6 +673,156 @@ box-shadow: var(--shadow-lg);
 opacity: 1;
 transform: translateX(-50%) translateY(0);
 }
+
+/* Week view */
+.main-views { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.view-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.view-panel[hidden] { display: none !important; }
+.week-calendar {
+padding: 0 20px 100px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+overflow-y: auto;
+scrollbar-width: none;
+-webkit-overflow-scrolling: touch;
+flex: 1;
+min-height: 0;
+}
+.week-calendar::-webkit-scrollbar { display: none; }
+.week-day-card {
+background: var(--card);
+border-radius: var(--radius);
+border: 1px solid var(--border);
+box-shadow: var(--shadow);
+padding: 12px 14px 14px;
+animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.week-day-head {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+margin-bottom: 10px;
+}
+.week-day-meta {
+display: flex;
+align-items: center;
+gap: 10px;
+min-width: 0;
+}
+.week-day-dow {
+font-family: 'Outfit', sans-serif;
+font-size: 13px;
+font-weight: 800;
+color: var(--text);
+letter-spacing: -0.3px;
+}
+.week-day-date {
+font-size: 11px;
+color: var(--text2);
+font-weight: 600;
+}
+.week-day-wx {
+display: flex;
+align-items: center;
+gap: 6px;
+flex-shrink: 0;
+}
+.week-wx-ico { font-size: 22px; line-height: 1; }
+.week-wx-temp {
+font-family: 'Outfit', sans-serif;
+font-size: 12px;
+font-weight: 700;
+color: var(--text);
+white-space: nowrap;
+}
+.week-add-btn {
+margin-top: 2px;
+width: 100%;
+padding: 8px 12px;
+border-radius: 12px;
+border: 1.5px dashed var(--border);
+background: var(--bg);
+color: var(--text2);
+font-size: 12px;
+font-weight: 700;
+font-family: 'Noto Sans JP', sans-serif;
+cursor: pointer;
+transition: all 0.15s;
+}
+.week-add-btn:hover {
+border-color: var(--sport);
+color: var(--sport);
+background: var(--sport-light);
+}
+.week-ev-list { display: flex; flex-direction: column; gap: 8px; }
+.week-ev {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 8px 10px;
+border-radius: 14px;
+background: var(--bg);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: box-shadow 0.15s;
+}
+.week-ev:hover { box-shadow: var(--shadow); }
+.week-ev.done { opacity: 0.5; }
+.week-ev.done .week-ev-title { text-decoration: line-through; }
+.week-ev-icon {
+width: 34px; height: 34px;
+border-radius: 12px;
+display: flex; align-items: center; justify-content: center;
+font-size: 17px;
+flex-shrink: 0;
+}
+.week-ev-body { flex: 1; min-width: 0; }
+.week-ev-title {
+font-size: 13px;
+font-weight: 600;
+color: var(--text);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.week-ev-meta {
+display: flex;
+align-items: center;
+gap: 5px;
+margin-top: 3px;
+flex-wrap: wrap;
+}
+.week-ev-time {
+font-family: 'Outfit', sans-serif;
+font-size: 10px;
+color: var(--text2);
+font-weight: 600;
+}
+.week-ev-check {
+width: 22px; height: 22px;
+border-radius: 50%;
+border: 2px solid var(--border);
+display: flex; align-items: center; justify-content: center;
+font-size: 10px;
+flex-shrink: 0;
+background: var(--card);
+}
+.week-ev-check.checked {
+background: var(--sport);
+border-color: var(--sport);
+color: #fff;
+}
+.week-ev-stripe {
+width: 4px;
+align-self: stretch;
+border-radius: 4px;
+flex-shrink: 0;
+}
+.week-ev-stripe.stripe-high { background: var(--high); }
+.week-ev-stripe.stripe-mid { background: var(--mid); }
+.week-ev-stripe.stripe-low { background: var(--low); }
 </style>
 
 </head>
@@ -691,6 +841,10 @@ transform: translateX(-50%) translateY(0);
 </div>
 <div class="profile-btn" id="profile-emoji">😊</div>
 </div>
+
+<div class="main-views">
+
+<div class="view-panel" id="view-today">
 
 <!-- Weather strip -->
 
@@ -746,16 +900,31 @@ transform: translateX(-50%) translateY(0);
 
 <!-- FAB -->
 
-<button class="fab" onclick="openModal()">＋</button>
+<button type="button" class="fab" id="fab-today" onclick="openModal()">＋</button>
+
+</div>
+
+<div class="view-panel" id="view-week" hidden>
+
+<div class="sec-head">
+<div class="sec-title">今週のカレンダー</div>
+<div class="sec-filter" style="visibility:hidden"><span class="filter-chip">　</span></div>
+</div>
+
+<div class="week-calendar" id="week-calendar"></div>
+
+</div>
+
+</div>
 
 <!-- Bottom nav -->
 
 <div class="bottom-nav">
-<div class="nav-item active">
+<div class="nav-item active" data-nav="today" onclick="setMainView('today',this)">
 <div class="nav-icon">☀️</div>
 <div class="nav-label">今日</div>
 </div>
-<div class="nav-item">
+<div class="nav-item" data-nav="week" onclick="setMainView('week',this)">
 <div class="nav-icon">📆</div>
 <div class="nav-label">週間</div>
 </div>
@@ -778,7 +947,7 @@ transform: translateX(-50%) translateY(0);
 <div class="overlay" id="overlay" onclick="closeOverlay(event)">
 <div class="modal-sheet" onclick="event.stopPropagation()">
 <div class="modal-handle"></div>
-<div class="modal-title">アクションを追加</div>
+<div class="modal-title" id="modal-title">アクションを追加</div>
 
 <label class="form-label">タイトル</label>
 <input class="form-input" id="m-title" placeholder="例：近所を散歩する" />
@@ -839,6 +1008,152 @@ let activeFilter = 'all'; // all | high
 let activeCat = 'all';
 let selectedCat = 'sport';
 let selectedPrio = 'low';
+
+const LS_WEEK = 'soloday-week-v1';
+let weekEvents = [];
+let nextWeekId = 1;
+let modalTargetDate = null;
+let activeMainView = 'today';
+
+function loadWeekEvents() {
+try {
+const raw = localStorage.getItem(LS_WEEK);
+weekEvents = raw ? JSON.parse(raw) : [];
+nextWeekId = weekEvents.reduce((m, e) => Math.max(m, Number(e.id) || 0), 0) + 1;
+} catch {
+weekEvents = [];
+nextWeekId = 1;
+}
+}
+
+function saveWeekEvents() {
+localStorage.setItem(LS_WEEK, JSON.stringify(weekEvents));
+}
+
+function setMainView(view, el) {
+activeMainView = view;
+const todayP = document.getElementById('view-today');
+const weekP = document.getElementById('view-week');
+const fab = document.getElementById('fab-today');
+document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
+el.classList.add('active');
+if (view === 'today') {
+todayP.hidden = false;
+weekP.hidden = true;
+fab.style.display = '';
+} else {
+todayP.hidden = true;
+weekP.hidden = false;
+fab.style.display = 'none';
+renderWeekCalendar();
+}
+}
+
+function buildWeekEventRow(ev) {
+const meta = CAT_META[ev.cat] || CAT_META.sport;
+const row = document.createElement('div');
+row.className = 'week-ev' + (ev.done ? ' done' : '');
+const stripe = document.createElement('div');
+stripe.className = 'week-ev-stripe stripe-' + ev.priority;
+const icon = document.createElement('div');
+icon.className = 'week-ev-icon ' + meta.cls;
+icon.textContent = meta.icon;
+const body = document.createElement('div');
+body.className = 'week-ev-body';
+const title = document.createElement('div');
+title.className = 'week-ev-title';
+title.textContent = ev.title;
+const metaRow = document.createElement('div');
+metaRow.className = 'week-ev-meta';
+let badge = '';
+if (ev.priority === 'high') badge = '<span class="ev-badge badge-high">高</span>';
+else if (ev.priority === 'mid') badge = '<span class="ev-badge badge-mid">中</span>';
+else badge = '<span class="ev-badge badge-low">低</span>';
+metaRow.innerHTML = `<span class="week-ev-time">${ev.time}</span>${badge}`;
+const chk = document.createElement('div');
+chk.className = 'week-ev-check' + (ev.done ? ' checked' : '');
+chk.textContent = ev.done ? '✓' : '';
+chk.addEventListener('click', e => toggleWeekDone(ev.id, e));
+body.appendChild(title);
+body.appendChild(metaRow);
+row.appendChild(stripe);
+row.appendChild(icon);
+row.appendChild(body);
+row.appendChild(chk);
+return row;
+}
+
+function renderWeekCalendar() {
+const host = document.getElementById('week-calendar');
+if (!host) return;
+host.innerHTML = '';
+const daily = wxForecast?.daily;
+if (!daily?.time?.length) {
+const empty = document.createElement('div');
+empty.className = 'empty-state';
+empty.innerHTML = '<div class="empty-state-icon">🌤</div><div class="empty-state-text">天気データを読み込み中です。しばらくお待ちください。</div>';
+host.appendChild(empty);
+return;
+}
+const jd = ['日','月','火','水','木','金','土'];
+const prioOrder = { high: 0, mid: 1, low: 2 };
+for (let i = 0; i < Math.min(7, daily.time.length); i++) {
+const dateStr = daily.time[i];
+const parts = dateStr.split('-').map(Number);
+const dow = jd[new Date(parts[0], parts[1] - 1, parts[2]).getDay()];
+const code = daily.weather_code[i];
+const tmax = Math.round(daily.temperature_2m_max[i]);
+const tmin = Math.round(daily.temperature_2m_min[i]);
+const card = document.createElement('div');
+card.className = 'week-day-card';
+card.style.animationDelay = `${i * 0.04}s`;
+const head = document.createElement('div');
+head.className = 'week-day-head';
+head.innerHTML = `
+<div class="week-day-meta">
+<div>
+<div class="week-day-dow">${dow}曜</div>
+<div class="week-day-date">${parts[1]}月${parts[2]}日</div>
+</div>
+</div>
+<div class="week-day-wx">
+<span class="week-wx-ico">${wmoEmoji(code)}</span>
+<div class="week-wx-temp">${tmax}° / ${tmin}°</div>
+</div>`;
+card.appendChild(head);
+const list = document.createElement('div');
+list.className = 'week-ev-list';
+const dayItems = weekEvents
+.filter(e => e.date === dateStr)
+.sort((a, b) => prioOrder[a.priority] - prioOrder[b.priority] || a.time.localeCompare(b.time));
+if (dayItems.length === 0) {
+const hint = document.createElement('div');
+hint.className = 'empty-state-text';
+hint.style.padding = '6px 0 4px';
+hint.style.color = 'var(--text3)';
+hint.style.fontSize = '12px';
+hint.textContent = '予定はまだありません';
+list.appendChild(hint);
+} else dayItems.forEach(ev => list.appendChild(buildWeekEventRow(ev)));
+card.appendChild(list);
+const addBtn = document.createElement('button');
+addBtn.type = 'button';
+addBtn.className = 'week-add-btn';
+addBtn.textContent = '+ この日に予定を追加';
+addBtn.addEventListener('click', () => openModal(dateStr));
+card.appendChild(addBtn);
+host.appendChild(card);
+}
+}
+
+function toggleWeekDone(id, e) {
+e.stopPropagation();
+const ev = weekEvents.find(x => x.id === id);
+if (!ev) return;
+ev.done = !ev.done;
+saveWeekEvents();
+renderWeekCalendar();
+}
 
 // ── Open-Meteo 天気（現在地）──────────────────────────────
 let wxForecast = null;
@@ -981,6 +1296,7 @@ chip.textContent = `⚠️ 明日降水 ${Math.round(pr ?? 0)}%`;
 chip.style.display = 'none';
 }
 updateWeatherWarn();
+if (activeMainView === 'week') renderWeekCalendar();
 }
 
 async function initWeather() {
@@ -1208,25 +1524,37 @@ showToast('明日は比較的落ち着いた予報です。念のため週間を
 }
 
 // ── Modal ──────────────────────────────────────────────────
-function openModal() {
+function openModal(forDate) {
+modalTargetDate = typeof forDate === 'string' && forDate.length >= 8 ? forDate : null;
+const titleEl = document.getElementById('modal-title');
+if (modalTargetDate) {
+const p = modalTargetDate.split('-').map(Number);
+titleEl.textContent = `${p[1]}月${p[2]}日の予定を追加`;
+} else {
+titleEl.textContent = 'アクションを追加';
+}
+document.querySelectorAll('#cat-grid .cat-option').forEach(o => { o.style.display = ''; });
+const otherOpt = document.querySelector('#cat-grid [data-cat="other"]');
+if (otherOpt) otherOpt.style.display = modalTargetDate ? 'none' : '';
 document.getElementById('overlay').classList.add('open');
 selectedCat = 'sport';
 selectedPrio = 'low';
 document.getElementById('m-title').value = '';
 document.getElementById('m-title').style.borderColor = '';
 document.getElementById('m-time').value = '09:00';
-// reset cat options
 document.querySelectorAll('#cat-grid .cat-option').forEach(o => o.className = 'cat-option');
 document.querySelector('#cat-grid [data-cat="sport"]').className = 'cat-option sel-sport';
-// reset prio
-document.querySelectorAll('.prio-btn').forEach(b => b.className = 'prio-btn');
-document.querySelector('[data-p="low"]').className = 'prio-btn sel-low';
+document.querySelectorAll('#overlay .prio-btn').forEach(b => b.className = 'prio-btn');
+document.querySelector('#overlay .prio-btn[data-p="low"]').className = 'prio-btn sel-low';
 updateWeatherWarn();
 }
 
 function closeOverlay(e) {
 if (e.target === document.getElementById('overlay')) {
 document.getElementById('overlay').classList.remove('open');
+modalTargetDate = null;
+document.getElementById('modal-title').textContent = 'アクションを追加';
+document.querySelectorAll('#cat-grid .cat-option').forEach(o => { o.style.display = ''; });
 }
 }
 
@@ -1239,7 +1567,7 @@ updateWeatherWarn();
 
 function selectPrio(p, el) {
 selectedPrio = p;
-document.querySelectorAll('.prio-btn').forEach(b => b.className = 'prio-btn');
+document.querySelectorAll('#overlay .prio-btn').forEach(b => b.className = 'prio-btn');
 el.className = `prio-btn sel-${p}`;
 }
 
@@ -1263,10 +1591,32 @@ document.getElementById('m-title').style.borderColor = 'var(--high)';
 document.getElementById('m-title').focus();
 return;
 }
+const timeVal = document.getElementById('m-time').value;
+let cat = selectedCat;
+if (modalTargetDate && cat === 'other') cat = 'sport';
+if (modalTargetDate) {
+weekEvents.push({
+id: nextWeekId++,
+date: modalTargetDate,
+title,
+time: timeVal,
+cat,
+priority: selectedPrio,
+done: false,
+});
+saveWeekEvents();
+document.getElementById('overlay').classList.remove('open');
+modalTargetDate = null;
+document.getElementById('modal-title').textContent = 'アクションを追加';
+document.querySelectorAll('#cat-grid .cat-option').forEach(o => { o.style.display = ''; });
+renderWeekCalendar();
+showToast('✅ 週間に追加しました');
+return;
+}
 events.push({
 id: nextId++,
 title,
-time: document.getElementById('m-time').value,
+time: timeVal,
 cat: selectedCat,
 priority: selectedPrio,
 done: false,
@@ -1284,6 +1634,7 @@ renderEvents();
 showToast('✅ アクションを追加しました！');
 }
 
+loadWeekEvents();
 renderEvents();
 buildHealthTrack();
 initWeather();
