@@ -164,9 +164,16 @@ border: 1px solid rgba(193,68,14,0.15);
 .weather-week {
 display: flex;
 gap: 6px;
+overflow-x: auto;
+scrollbar-width: none;
+-webkit-overflow-scrolling: touch;
+padding-bottom: 2px;
 }
+.weather-week::-webkit-scrollbar { display: none; }
 .weather-day-pill {
-flex: 1;
+flex: 1 0 auto;
+min-width: 56px;
+max-width: 72px;
 background: var(--bg);
 border-radius: 12px;
 padding: 8px 4px;
@@ -689,22 +696,14 @@ transform: translateX(-50%) translateY(0);
 
 <div class="weather-strip">
 <div class="weather-today">
-<div class="weather-big">☀️</div>
+<div class="weather-big" id="wx-icon-big">⋯</div>
 <div class="weather-info">
-<div class="weather-temp">22°C <span style="font-size:14px;font-weight:400;color:var(--text2)">晴れ</span></div>
-<div class="weather-desc">紫外線：中　湿度：55%　風：3m/s</div>
+<div class="weather-temp"><span id="wx-temp">—°C</span> <span id="wx-summary" style="font-size:14px;font-weight:400;color:var(--text2)">読み込み中…</span></div>
+<div class="weather-desc" id="wx-desc">現在地から天気を取得しています</div>
 </div>
-<div class="weather-alert-chip" onclick="showWeatherDetail()">
-⚠️ 明日雨
+<div class="weather-alert-chip" id="wx-alert-chip" style="display:none" onclick="showWeatherDetail()">⚠️ 明日降水</div>
 </div>
-</div>
-<div class="weather-week">
-<div class="weather-day-pill"><div class="wd-label">今日</div><div class="wd-icon">☀️</div><div class="wd-temp">22°</div><div class="wd-rain"></div></div>
-<div class="weather-day-pill"><div class="wd-label">明日</div><div class="wd-icon">🌧️</div><div class="wd-temp">17°</div><div class="wd-rain">80%</div></div>
-<div class="weather-day-pill"><div class="wd-label">土</div><div class="wd-icon">⛅</div><div class="wd-temp">20°</div><div class="wd-rain">30%</div></div>
-<div class="weather-day-pill"><div class="wd-label">日</div><div class="wd-icon">☀️</div><div class="wd-temp">25°</div><div class="wd-rain"></div></div>
-<div class="weather-day-pill"><div class="wd-label">月</div><div class="wd-icon">☀️</div><div class="wd-temp">24°</div><div class="wd-rain"></div></div>
-</div>
+<div class="weather-week" id="weather-week"></div>
 </div>
 
 <!-- Health bar -->
@@ -840,6 +839,186 @@ let activeFilter = 'all'; // all | high
 let activeCat = 'all';
 let selectedCat = 'sport';
 let selectedPrio = 'low';
+
+// ── Open-Meteo 天気（現在地）──────────────────────────────
+let wxForecast = null;
+
+const WX_FALLBACK = { lat: 35.681236, lon: 139.767125, note: '東京都丸の内付近にフォールバックしました' }; // HTTPS不可時・位置情報拒否など
+
+function wmoEmoji(code) {
+const c = code | 0;
+if (c === 0) return '☀️';
+if (c === 1) return '🌤';
+if (c === 2) return '🌥';
+if (c === 3) return '☁️';
+if (c === 45 || c === 48) return '🌫';
+if (c >= 51 && c <= 57) return '🌧';
+if (c >= 61 && c <= 67) return '🌧';
+if (c >= 71 && c <= 77) return '🌨';
+if (c >= 80 && c <= 82) return '🌦';
+if (c === 95) return '⛈';
+if (c >= 96) return '⛈';
+return '🌈';
+}
+
+function wmoJa(code) {
+const c = code | 0;
+if (c === 0) return '晴れ';
+if (c === 1) return '概ね晴れ';
+if (c === 2) return 'ときどきくもり';
+if (c === 3) return 'くもり';
+if (c === 45 || c === 48) return '霧';
+if (c >= 51 && c <= 57) return '霧雨・弱い降水';
+if (c === 61 || c === 63) return '小雨〜雨';
+if (c === 65 || c === 66 || c === 67) return '強い降水';
+if (c >= 71 && c <= 77) return '雪';
+if (c === 80 || c === 81) return '俄か雨';
+if (c === 82) return '激しいシャワー';
+if (c === 95) return '雷雨';
+if (c >= 96 && c <= 99) return 'ひょうを伴う雷雨';
+return '天気';
+}
+
+function uvJa(uv) {
+if (uv == null || Number.isNaN(uv)) return '—';
+const v = +uv;
+if (v < 3) return '弱';
+if (v < 6) return '中';
+if (v < 8) return 'やや強';
+if (v < 11) return '強';
+return '強い／注意';
+}
+
+function nearestUvIndexHourly(curIso, hourly) {
+if (!hourly?.time?.length || !hourly?.uv_index?.length) return null;
+const tCur = Date.parse(curIso || new Date().toISOString());
+if (Number.isNaN(tCur)) return hourly.uv_index[0];
+let best = hourly.uv_index[0];
+let bestDt = Infinity;
+for (let i = 0; i < hourly.time.length; i++) {
+const dt = Math.abs(Date.parse(hourly.time[i]) - tCur);
+if (dt < bestDt) { bestDt = dt; best = hourly.uv_index[i]; }
+}
+return best;
+}
+
+function tomorrowRainConcern() {
+if (!wxForecast || !wxForecast.daily) return false;
+const pr = wxForecast.daily.precipitation_probability_max;
+const wc = wxForecast.daily.weather_code;
+if (!Array.isArray(pr) || !Array.isArray(wc) || pr.length < 2 || wc.length < 2) return false;
+const wet = wc[1] >= 51;
+if ((pr[1] ?? 0) >= 50) return true;
+return wet && (pr[1] ?? 0) >= 35;
+}
+
+function renderWeatherWeek(daily) {
+const el = document.getElementById('weather-week');
+if (!el || !daily || !daily.time || !daily.time.length) return;
+el.innerHTML = '';
+const jd = ['日','月','火','水','木','金','土'];
+const times = daily.time;
+const maxDays = Math.min(7, times.length);
+for (let i = 0; i < maxDays; i++) {
+let label;
+if (i === 0) label = '今日';
+else if (i === 1) label = '明日';
+else {
+const p = times[i].split('-').map(Number);
+const dow = jd[new Date(p[0], p[1] - 1, p[2]).getDay()];
+label = dow;
+}
+const code = daily.weather_code[i];
+const tmx = Math.round(daily.temperature_2m_max[i]);
+let rain = '';
+const pr = daily.precipitation_probability_max?.[i];
+if (pr != null && Math.round(pr) >= 15) rain = `${Math.round(pr)}%`;
+const pill = document.createElement('div');
+pill.className = 'weather-day-pill';
+pill.innerHTML = `<div class="wd-label">${label}</div><div class="wd-icon">${wmoEmoji(code)}</div><div class="wd-temp">${tmx}°</div><div class="wd-rain">${rain}</div>`;
+el.appendChild(pill);
+}
+}
+
+async function fetchOpenMeteo(lat, lon) {
+const url = new URL('https://api.open-meteo.com/v1/forecast');
+url.searchParams.set('latitude', String(lat));
+url.searchParams.set('longitude', String(lon));
+url.searchParams.set('current', 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m');
+url.searchParams.set('hourly', 'uv_index');
+url.searchParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max');
+url.searchParams.set('forecast_days', '7');
+url.searchParams.set('timezone', 'auto');
+const res = await fetch(url.toString());
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
+const data = await res.json();
+if (!data.current || !data.daily) throw new Error('Malformed Open-Meteo response');
+wxForecast = data;
+return data;
+}
+
+function applyWeatherUi(data, extraNote) {
+const cur = data.current;
+const emoji = document.getElementById('wx-icon-big');
+emoji.textContent = wmoEmoji(cur.weather_code);
+document.getElementById('wx-temp').textContent = `${Math.round(cur.temperature_2m)}°C`;
+document.getElementById('wx-summary').textContent = wmoJa(cur.weather_code);
+let uvTxt = uvJa(nearestUvIndexHourly(cur.time, data.hourly));
+const hum = Math.round(cur.relative_humidity_2m ?? 0);
+const wind = (cur.wind_speed_10m != null ? Number(cur.wind_speed_10m) : 0).toFixed(1);
+let desc = `紫外線：${uvTxt}　湿度：${hum}％　風：${wind} m/s`;
+if (data.timezone) desc += `　TZ: ${data.timezone}`;
+if (extraNote) desc = `${extraNote}　${desc}`;
+document.getElementById('wx-desc').textContent = desc;
+
+const chip = document.getElementById('wx-alert-chip');
+renderWeatherWeek(data.daily);
+if (tomorrowRainConcern()) {
+chip.style.display = 'flex';
+const pr = wxForecast.daily.precipitation_probability_max[1];
+chip.textContent = `⚠️ 明日降水 ${Math.round(pr ?? 0)}%`;
+} else {
+chip.style.display = 'none';
+}
+updateWeatherWarn();
+}
+
+async function initWeather() {
+let lat = WX_FALLBACK.lat, lon = WX_FALLBACK.lon;
+let note = '';
+if (!window.isSecureContext) {
+note = '※HTTPS（または localhost）で開くと現在地の天気に合わせられます。';
+await fetchOpenMeteo(lat, lon);
+applyWeatherUi(wxForecast, `${note} ${WX_FALLBACK.note}`);
+return;
+}
+const geoOk = typeof navigator !== 'undefined' && navigator.geolocation;
+if (!geoOk) {
+note = 'このブラウザでは位置情報を使えません。';
+} else {
+try {
+const pos = await new Promise((resolve, reject) => {
+navigator.geolocation.getCurrentPosition(resolve, reject, {
+enableHighAccuracy: true,
+timeout: 14000,
+maximumAge: 300000,
+});
+});
+lat = pos.coords.latitude;
+lon = pos.coords.longitude;
+} catch (e) {
+const why = e && e.message ? e.message : '取得できませんでした';
+note = `${WX_FALLBACK.note}（位置情報: ${why}）`;
+showToast('位置情報が使えないため、参考地点の天気を表示しています');
+}}
+try {
+await fetchOpenMeteo(lat, lon);
+applyWeatherUi(wxForecast, note);
+} catch (e) {
+document.getElementById('wx-desc').textContent = 'Open-Meteo からデータを読み込めませんでした。通信を確認してください。';
+console.error(e);
+}
+}
 
 // ── Date ─────────────────────────────────────────────────
 (function() {
@@ -1015,7 +1194,17 @@ setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 function showWeatherDetail() {
-showToast('☔ 明日の雨に備えて屋外予定を確認してください');
+if (!wxForecast || !wxForecast.daily) {
+showToast('天気情報を準備できていません。');
+return;
+}
+const wc = wxForecast.daily.weather_code;
+const pr = wxForecast.daily.precipitation_probability_max;
+if ((pr?.[1] ?? 0) >= 35 || wc?.[1] >= 51) {
+showToast(`明日は「${wmoJa(wc[1])}」／降水確率 ${Math.round(pr?.[1] ?? 0)}%。屋外予定を確認してください`);
+} else {
+showToast('明日は比較的落ち着いた予報です。念のため週間を確認してくださいね');
+}
 }
 
 // ── Modal ──────────────────────────────────────────────────
@@ -1056,7 +1245,15 @@ el.className = `prio-btn sel-${p}`;
 
 function updateWeatherWarn() {
 const box = document.getElementById('weather-warn');
-box.style.display = OUTDOOR_CATS.includes(selectedCat) ? 'flex' : 'none';
+const showOutdoor = OUTDOOR_CATS.includes(selectedCat);
+const rain = tomorrowRainConcern();
+box.style.display = showOutdoor && rain ? 'flex' : 'none';
+const wt = box.querySelector('.weather-warn-text');
+if (!(showOutdoor && rain && wt && wxForecast?.daily)) return;
+const pr = wxForecast.daily.precipitation_probability_max?.[1];
+const desc = wxForecast.daily.weather_code?.[1];
+if (pr == null || desc == null) return;
+wt.innerHTML = `<strong>明日は${wmoJa(desc)}／降水確率 ${Math.round(pr)}%</strong><br>屋外アクションが向くか確認しますか？別日にすると安心かもしれません。`;
 }
 
 function addEvent() {
@@ -1089,6 +1286,7 @@ showToast('✅ アクションを追加しました！');
 
 renderEvents();
 buildHealthTrack();
+initWeather();
 </script>
 
 </body>
