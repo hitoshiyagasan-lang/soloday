@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SoloDay – 自分だけの一日を最適化</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+--bg: #f7f5f0;
+--cream: #ede9e0;
+--card: #ffffff;
+--text: #1a1814;
+--text2: #7a7568;
+--text3: #b5b0a5;
+--border: #e8e4dc;
+
+--sport: #2d6a4f;
+--sport-light: #d8f3dc;
+--buy: #b5451b;
+--buy-light: #fde8e0;
+--relax: #5e60ce;
+--relax-light: #e8e8ff;
+--hobby: #d4a017;
+--hobby-light: #fdf3d0;
+--health: #c77dff;
+--health-light: #f3e8ff;
+
+--high: #c1440e;
+--mid: #c88f00;
+--low: #2d6a4f;
+
+--sun: #f4a261;
+--rain: #457b9d;
+--cloud: #94a3b8;
+
+--radius: 20px;
+--shadow: 0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+--shadow-lg: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+body {
+background: #e8e4da;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+min-height: 100vh;
+font-family: 'Noto Sans JP', sans-serif;
+padding: 32px 12px 60px;
+}
+
+/* Phone shell */
+.phone {
+width: 390px;
+max-width: 100%;
+background: var(--bg);
+border-radius: 52px;
+overflow: hidden;
+box-shadow: 0 60px 120px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+min-height: 860px;
+display: flex;
+flex-direction: column;
+position: relative;
+}
+
+/* Status */
+.status-bar {
+display: flex;
+justify-content: space-between;
+padding: 16px 28px 4px;
+font-size: 11px;
+font-weight: 600;
+color: var(--text2);
+font-family: 'Outfit', sans-serif;
+}
+
+/* Header */
+.header {
+padding: 8px 24px 0;
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+}
+.logo {
+font-family: 'Outfit', sans-serif;
+font-size: 32px;
+font-weight: 800;
+color: var(--text);
+letter-spacing: -1.5px;
+line-height: 1;
+}
+.logo span {
+color: var(--sport);
+}
+.date-label {
+font-size: 12px;
+color: var(--text2);
+margin-top: 4px;
+font-weight: 400;
+}
+.profile-btn {
+width: 42px; height: 42px;
+border-radius: 50%;
+background: var(--cream);
+border: 2px solid var(--border);
+display: flex; align-items: center; justify-content: center;
+font-size: 18px;
+cursor: pointer;
+transition: transform 0.2s;
+box-shadow: var(--shadow);
+}
+.profile-btn:hover { transform: scale(1.05); }
+
+/* Weather strip */
+.weather-strip {
+margin: 16px 20px 0;
+background: var(--card);
+border-radius: var(--radius);
+padding: 14px 18px;
+box-shadow: var(--shadow);
+border: 1px solid var(--border);
+}
+.weather-today {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 12px;
+}
+.weather-big {
+font-size: 36px;
+line-height: 1;
+}
+.weather-info { flex: 1; }
+.weather-temp {
+font-family: 'Outfit', sans-serif;
+font-size: 24px;
+font-weight: 700;
+color: var(--text);
+letter-spacing: -0.5px;
+}
+.weather-desc {
+font-size: 12px;
+color: var(--text2);
+margin-top: 1px;
+}
+.weather-alert-chip {
+background: #fde8e0;
+color: var(--buy);
+font-size: 11px;
+font-weight: 600;
+padding: 4px 10px;
+border-radius: 20px;
+display: flex;
+align-items: center;
+gap: 4px;
+cursor: pointer;
+transition: opacity 0.2s;
+border: 1px solid rgba(193,68,14,0.15);
+}
+.weather-alert-chip:hover { opacity: 0.8; }
+.weather-week {
+display: flex;
+gap: 6px;
+}
+.weather-day-pill {
+flex: 1;
+background: var(--bg);
+border-radius: 12px;
+padding: 8px 4px;
+text-align: center;
+border: 1px solid var(--border);
+}
+.wd-label { font-size: 9px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; }
+.wd-icon { font-size: 18px; margin: 4px 0; }
+.wd-temp { font-size: 11px; color: var(--text); font-weight: 700; font-family: 'Outfit', sans-serif; }
+.wd-rain { font-size: 9px; color: var(--rain); font-weight: 600; margin-top: 2px; }
+
+/* Health bar */
+.health-bar {
+margin: 12px 20px 0;
+background: var(--card);
+border-radius: var(--radius);
+padding: 14px 18px;
+box-shadow: var(--shadow);
+border: 1px solid var(--border);
+display: flex;
+align-items: center;
+gap: 14px;
+}
+.health-inner { width: 100%; }
+.health-title-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 10px;
+}
+.health-title-text {
+font-size: 13px;
+font-weight: 700;
+color: var(--text);
+}
+.health-pct-display {
+font-family: 'Outfit', sans-serif;
+font-size: 22px;
+font-weight: 800;
+letter-spacing: -1px;
+transition: color 0.3s;
+}
+.health-subtitle { font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+.health-track {
+display: flex;
+gap: 4px;
+align-items: center;
+}
+.h-seg {
+flex: 1;
+height: 28px;
+border-radius: 8px;
+background: var(--bg);
+border: 1.5px solid var(--border);
+cursor: pointer;
+transition: all 0.15s;
+position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.h-seg:hover { transform: scaleY(1.15); }
+.h-seg.filled { border-color: transparent; }
+.h-seg-label {
+font-family: 'Outfit', sans-serif;
+font-size: 8px;
+font-weight: 700;
+color: rgba(255,255,255,0.85);
+display: none;
+}
+.h-seg.filled .h-seg-label { display: block; }
+.h-seg:last-child .h-seg-label { display: block; color: inherit; font-size: 9px; }
+
+/* Section header */
+.sec-head {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 18px 24px 10px;
+}
+.sec-title {
+font-family: 'Outfit', sans-serif;
+font-size: 16px;
+font-weight: 700;
+color: var(--text);
+letter-spacing: -0.3px;
+}
+.sec-filter {
+display: flex;
+gap: 6px;
+}
+.filter-chip {
+font-size: 11px;
+font-weight: 600;
+padding: 4px 10px;
+border-radius: 20px;
+background: var(--cream);
+color: var(--text2);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: all 0.15s;
+}
+.filter-chip.active {
+background: var(--text);
+color: var(--bg);
+border-color: var(--text);
+}
+
+/* Category tabs */
+.cat-scroll {
+display: flex;
+gap: 8px;
+padding: 0 20px 12px;
+overflow-x: auto;
+scrollbar-width: none;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+.cat-tab {
+display: flex;
+align-items: center;
+gap: 6px;
+padding: 7px 14px;
+border-radius: 30px;
+font-size: 12px;
+font-weight: 600;
+white-space: nowrap;
+cursor: pointer;
+border: 1.5px solid var(--border);
+background: var(--card);
+color: var(--text2);
+transition: all 0.18s;
+box-shadow: var(--shadow);
+}
+.cat-tab.active-sport { background: var(--sport-light); color: var(--sport); border-color: var(--sport); }
+.cat-tab.active-buy { background: var(--buy-light); color: var(--buy); border-color: var(--buy); }
+.cat-tab.active-relax { background: var(--relax-light); color: var(--relax); border-color: var(--relax); }
+.cat-tab.active-hobby { background: var(--hobby-light); color: var(--hobby); border-color: var(--hobby); }
+.cat-tab.active-health { background: var(--health-light); color: var(--health); border-color: var(--health); }
+.cat-tab.active-all { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* Event list */
+.event-list {
+padding: 0 20px;
+display: flex;
+flex-direction: column;
+gap: 10px;
+flex: 1;
+}
+
+.ev-card {
+background: var(--card);
+border-radius: var(--radius);
+padding: 14px 16px;
+display: flex;
+align-items: center;
+gap: 12px;
+box-shadow: var(--shadow);
+border: 1px solid var(--border);
+cursor: pointer;
+transition: all 0.2s;
+position: relative;
+overflow: hidden;
+animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes slideUp {
+from { opacity: 0; transform: translateY(12px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.ev-card:hover {
+box-shadow: var(--shadow-lg);
+transform: translateY(-1px);
+}
+.ev-card.done {
+opacity: 0.5;
+}
+.ev-card.done .ev-title {
+text-decoration: line-through;
+}
+
+/* Priority stripe */
+.ev-stripe {
+position: absolute;
+left: 0; top: 0; bottom: 0;
+width: 5px;
+border-radius: 5px 0 0 5px;
+}
+.stripe-high { background: var(--high); }
+.stripe-mid { background: var(--mid); }
+.stripe-low { background: var(--low); }
+
+.ev-cat-icon {
+width: 40px; height: 40px;
+border-radius: 14px;
+display: flex; align-items: center; justify-content: center;
+font-size: 20px;
+flex-shrink: 0;
+}
+.icon-sport { background: var(--sport-light); }
+.icon-buy { background: var(--buy-light); }
+.icon-relax { background: var(--relax-light); }
+.icon-hobby { background: var(--hobby-light); }
+.icon-health { background: var(--health-light); }
+
+.ev-body { flex: 1; min-width: 0; }
+.ev-title {
+font-size: 14px;
+font-weight: 600;
+color: var(--text);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.ev-meta {
+display: flex;
+align-items: center;
+gap: 6px;
+margin-top: 5px;
+flex-wrap: wrap;
+}
+.ev-time {
+font-family: 'Outfit', sans-serif;
+font-size: 11px;
+color: var(--text2);
+font-weight: 500;
+}
+.ev-badge {
+font-size: 10px;
+font-weight: 700;
+padding: 2px 7px;
+border-radius: 20px;
+letter-spacing: 0.3px;
+}
+.badge-high { background: #fde8e0; color: var(--high); }
+.badge-mid { background: #fdf3d0; color: var(--mid); }
+.badge-low { background: var(--sport-light); color: var(--sport); }
+.badge-warn { background: #fde8e0; color: var(--buy); }
+.badge-ok { background: #fff8e7; color: var(--sun); }
+
+.ev-right {
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: 6px;
+}
+.ev-check {
+width: 26px; height: 26px;
+border-radius: 50%;
+border: 2px solid var(--border);
+display: flex; align-items: center; justify-content: center;
+cursor: pointer;
+transition: all 0.2s;
+font-size: 12px;
+background: var(--bg);
+}
+.ev-check:hover { border-color: var(--sport); background: var(--sport-light); }
+.ev-check.checked { background: var(--sport); border-color: var(--sport); color: white; }
+.ev-streak {
+font-size: 10px;
+color: var(--text3);
+display: flex;
+align-items: center;
+gap: 2px;
+}
+
+/* Empty state */
+.empty-state {
+text-align: center;
+padding: 32px 20px;
+color: var(--text3);
+}
+.empty-state-icon { font-size: 40px; margin-bottom: 8px; }
+.empty-state-text { font-size: 13px; }
+
+/* FAB */
+.fab {
+position: absolute;
+bottom: 82px;
+right: 22px;
+width: 56px; height: 56px;
+border-radius: 50%;
+background: var(--text);
+border: none;
+display: flex; align-items: center; justify-content: center;
+font-size: 26px;
+color: var(--bg);
+cursor: pointer;
+box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+transition: all 0.2s;
+z-index: 10;
+}
+.fab:hover { transform: scale(1.08) rotate(45deg); }
+
+/* Bottom nav */
+.bottom-nav {
+display: flex;
+justify-content: space-around;
+padding: 10px 10px 28px;
+border-top: 1px solid var(--border);
+background: var(--card);
+position: relative;
+z-index: 5;
+}
+.nav-item {
+display: flex; flex-direction: column;
+align-items: center; gap: 3px;
+cursor: pointer;
+padding: 6px 18px;
+border-radius: 14px;
+transition: background 0.15s;
+}
+.nav-item:hover { background: var(--cream); }
+.nav-item.active { background: var(--cream); }
+.nav-icon { font-size: 20px; }
+.nav-label {
+font-size: 10px;
+color: var(--text3);
+font-weight: 600;
+}
+.nav-item.active .nav-label { color: var(--text); }
+
+/* ===== MODAL ===== */
+.overlay {
+position: absolute;
+inset: 0;
+background: rgba(26,24,20,0.5);
+backdrop-filter: blur(6px);
+z-index: 50;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.25s;
+display: flex;
+align-items: flex-end;
+}
+.overlay.open {
+opacity: 1;
+pointer-events: all;
+}
+.modal-sheet {
+background: var(--card);
+border-radius: 28px 28px 0 0;
+width: 100%;
+padding: 0 22px 32px;
+transform: translateY(100%);
+transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+max-height: 90%;
+overflow-y: auto;
+}
+.overlay.open .modal-sheet {
+transform: translateY(0);
+}
+.modal-handle {
+width: 36px; height: 4px;
+background: var(--border);
+border-radius: 2px;
+margin: 16px auto 20px;
+}
+.modal-title {
+font-family: 'Outfit', sans-serif;
+font-size: 20px;
+font-weight: 800;
+color: var(--text);
+letter-spacing: -0.5px;
+margin-bottom: 20px;
+}
+
+.form-label {
+font-size: 11px;
+font-weight: 700;
+color: var(--text2);
+letter-spacing: 1px;
+text-transform: uppercase;
+display: block;
+margin-bottom: 8px;
+}
+.form-input {
+width: 100%;
+background: var(--bg);
+border: 1.5px solid var(--border);
+border-radius: 14px;
+padding: 12px 16px;
+font-size: 14px;
+color: var(--text);
+font-family: 'Noto Sans JP', sans-serif;
+outline: none;
+transition: border-color 0.2s;
+margin-bottom: 16px;
+}
+.form-input:focus { border-color: var(--text); }
+
+/* Category selector */
+.cat-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-bottom: 16px;
+}
+.cat-option {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 12px 14px;
+border-radius: 14px;
+border: 2px solid var(--border);
+cursor: pointer;
+transition: all 0.18s;
+background: var(--bg);
+}
+.cat-option-icon { font-size: 20px; }
+.cat-option-label { font-size: 13px; font-weight: 600; color: var(--text2); }
+.cat-option.sel-sport { border-color: var(--sport); background: var(--sport-light); }
+.cat-option.sel-sport .cat-option-label { color: var(--sport); }
+.cat-option.sel-buy { border-color: var(--buy); background: var(--buy-light); }
+.cat-option.sel-buy .cat-option-label { color: var(--buy); }
+.cat-option.sel-relax { border-color: var(--relax); background: var(--relax-light); }
+.cat-option.sel-relax .cat-option-label { color: var(--relax); }
+.cat-option.sel-hobby { border-color: var(--hobby); background: var(--hobby-light); }
+.cat-option.sel-hobby .cat-option-label { color: var(--hobby); }
+.cat-option.sel-health { border-color: var(--health); background: var(--health-light); }
+.cat-option.sel-health .cat-option-label { color: var(--health); }
+.cat-option.sel-other { border-color: var(--text2); background: var(--cream); }
+.cat-option.sel-other .cat-option-label { color: var(--text); }
+
+/* Priority */
+.prio-row {
+display: flex;
+gap: 8px;
+margin-bottom: 16px;
+}
+.prio-btn {
+flex: 1;
+padding: 10px;
+border-radius: 12px;
+border: 2px solid var(--border);
+text-align: center;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.18s;
+color: var(--text2);
+background: var(--bg);
+}
+.prio-btn.sel-high { border-color: var(--high); background: #fde8e0; color: var(--high); }
+.prio-btn.sel-mid { border-color: var(--mid); background: #fdf3d0; color: var(--mid); }
+.prio-btn.sel-low { border-color: var(--sport); background: var(--sport-light); color: var(--sport); }
+
+/* Weather warning in modal */
+.weather-warn-box {
+background: #fde8e0;
+border: 1.5px solid rgba(193,68,14,0.2);
+border-radius: 14px;
+padding: 12px 14px;
+display: flex;
+gap: 10px;
+margin-bottom: 16px;
+align-items: flex-start;
+}
+.weather-warn-icon { font-size: 20px; flex-shrink: 0; }
+.weather-warn-text { font-size: 12px; color: var(--buy); line-height: 1.6; }
+
+.btn-submit {
+width: 100%;
+padding: 16px;
+background: var(--text);
+color: var(--bg);
+border: none;
+border-radius: 16px;
+font-size: 15px;
+font-weight: 700;
+font-family: 'Noto Sans JP', sans-serif;
+cursor: pointer;
+transition: opacity 0.2s, transform 0.15s;
+margin-top: 4px;
+letter-spacing: 0.3px;
+}
+.btn-submit:hover { opacity: 0.85; transform: scale(0.99); }
+
+/* Streak toast */
+.toast {
+position: absolute;
+top: 80px;
+left: 50%;
+transform: translateX(-50%) translateY(-20px);
+background: var(--text);
+color: var(--bg);
+font-size: 13px;
+font-weight: 600;
+padding: 10px 20px;
+border-radius: 30px;
+white-space: nowrap;
+opacity: 0;
+transition: all 0.3s;
+pointer-events: none;
+z-index: 200;
+box-shadow: var(--shadow-lg);
+}
+.toast.show {
+opacity: 1;
+transform: translateX(-50%) translateY(0);
+}
+</style>
+
+</head>
+<body>
+<div class="phone" id="app">
+
+<div class="status-bar">
+<span style="font-weight:700">9:41</span>
+<span>●●●</span>
+</div>
+
+<div class="header">
+<div>
+<div class="logo">Solo<span>Day</span></div>
+<div class="date-label" id="date-label">読み込み中…</div>
+</div>
+<div class="profile-btn" id="profile-emoji">😊</div>
+</div>
+
+<!-- Weather strip -->
+
+<div class="weather-strip">
+<div class="weather-today">
+<div class="weather-big">☀️</div>
+<div class="weather-info">
+<div class="weather-temp">22°C <span style="font-size:14px;font-weight:400;color:var(--text2)">晴れ</span></div>
+<div class="weather-desc">紫外線：中　湿度：55%　風：3m/s</div>
+</div>
+<div class="weather-alert-chip" onclick="showWeatherDetail()">
+⚠️ 明日雨
+</div>
+</div>
+<div class="weather-week">
+<div class="weather-day-pill"><div class="wd-label">今日</div><div class="wd-icon">☀️</div><div class="wd-temp">22°</div><div class="wd-rain"></div></div>
+<div class="weather-day-pill"><div class="wd-label">明日</div><div class="wd-icon">🌧️</div><div class="wd-temp">17°</div><div class="wd-rain">80%</div></div>
+<div class="weather-day-pill"><div class="wd-label">土</div><div class="wd-icon">⛅</div><div class="wd-temp">20°</div><div class="wd-rain">30%</div></div>
+<div class="weather-day-pill"><div class="wd-label">日</div><div class="wd-icon">☀️</div><div class="wd-temp">25°</div><div class="wd-rain"></div></div>
+<div class="weather-day-pill"><div class="wd-label">月</div><div class="wd-icon">☀️</div><div class="wd-temp">24°</div><div class="wd-rain"></div></div>
+</div>
+</div>
+
+<!-- Health bar -->
+
+<div class="health-bar">
+<div class="health-inner">
+<div class="health-title-row">
+<div class="health-title-text">💪 今日の体調</div>
+<div class="health-pct-display" id="health-display" style="color:var(--text3)">—</div>
+</div>
+<div class="health-subtitle" id="health-sub">バーをタップして体調を記録</div>
+<div class="health-track" id="health-track"></div>
+</div>
+</div>
+
+<!-- Section -->
+
+<div class="sec-head">
+<div class="sec-title">今日のアクション</div>
+<div class="sec-filter">
+<div class="filter-chip active" onclick="setFilter('all',this)">すべて</div>
+<div class="filter-chip" onclick="setFilter('high',this)">🔴 高のみ</div>
+</div>
+</div>
+
+<!-- Category tabs -->
+
+<div class="cat-scroll" id="cat-tabs">
+<div class="cat-tab active-all" data-cat="all" onclick="filterCat('all',this)">🗂 すべて</div>
+<div class="cat-tab" data-cat="sport" onclick="filterCat('sport',this)">🏃 運動</div>
+<div class="cat-tab" data-cat="buy" onclick="filterCat('buy',this)">🛒 買い物</div>
+<div class="cat-tab" data-cat="relax" onclick="filterCat('relax',this)">🧘 休息</div>
+<div class="cat-tab" data-cat="hobby" onclick="filterCat('hobby',this)">🎨 趣味</div>
+<div class="cat-tab" data-cat="health" onclick="filterCat('health',this)">💊 健康</div>
+</div>
+
+<!-- Events -->
+
+<div class="event-list" id="event-list"></div>
+
+<!-- FAB -->
+
+<button class="fab" onclick="openModal()">＋</button>
+
+<!-- Bottom nav -->
+
+<div class="bottom-nav">
+<div class="nav-item active">
+<div class="nav-icon">☀️</div>
+<div class="nav-label">今日</div>
+</div>
+<div class="nav-item">
+<div class="nav-icon">📆</div>
+<div class="nav-label">週間</div>
+</div>
+<div class="nav-item">
+<div class="nav-icon">🔥</div>
+<div class="nav-label">記録</div>
+</div>
+<div class="nav-item">
+<div class="nav-icon">⚙️</div>
+<div class="nav-label">設定</div>
+</div>
+</div>
+
+<!-- Toast -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal -->
+
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+<div class="modal-sheet" onclick="event.stopPropagation()">
+<div class="modal-handle"></div>
+<div class="modal-title">アクションを追加</div>
+
+<label class="form-label">タイトル</label>
+<input class="form-input" id="m-title" placeholder="例：近所を散歩する" />
+
+<label class="form-label">時間</label>
+<input class="form-input" id="m-time" type="time" value="09:00" />
+
+<label class="form-label">カテゴリー</label>
+<div class="cat-grid" id="cat-grid">
+<div class="cat-option" data-cat="sport" onclick="selectCat('sport',this)"><span class="cat-option-icon">🏃</span><span class="cat-option-label">運動・スポーツ</span></div>
+<div class="cat-option" data-cat="buy" onclick="selectCat('buy',this)"><span class="cat-option-icon">🛒</span><span class="cat-option-label">買い物</span></div>
+<div class="cat-option" data-cat="relax" onclick="selectCat('relax',this)"><span class="cat-option-icon">🧘</span><span class="cat-option-label">休息・リラックス</span></div>
+<div class="cat-option" data-cat="hobby" onclick="selectCat('hobby',this)"><span class="cat-option-icon">🎨</span><span class="cat-option-label">趣味</span></div>
+<div class="cat-option" data-cat="health" onclick="selectCat('health',this)"><span class="cat-option-icon">💊</span><span class="cat-option-label">健康管理</span></div>
+<div class="cat-option" data-cat="other" onclick="selectCat('other',this)"><span class="cat-option-icon">📌</span><span class="cat-option-label">その他</span></div>
+</div>
+
+<!-- Weather warning (shown for outdoor categories) -->
+<div class="weather-warn-box" id="weather-warn" style="display:none">
+<div class="weather-warn-icon">🌧️</div>
+<div class="weather-warn-text"><strong>明日は雨の予報です。</strong><br>屋外アクションには向かない可能性があります。別の日に移動しますか？</div>
+</div>
+
+<label class="form-label">優先順位</label>
+<div class="prio-row">
+<div class="prio-btn" data-p="high" onclick="selectPrio('high',this)">🔴 高</div>
+<div class="prio-btn" data-p="mid" onclick="selectPrio('mid',this)">🟡 中</div>
+<div class="prio-btn sel-low" data-p="low" onclick="selectPrio('low',this)">🟢 低</div>
+</div>
+
+<button type="button" class="btn-submit" onclick="addEvent()">追加する →</button>
+</div>
+</div>
+
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────
+const CAT_META = {
+sport: { icon: '🏃', label: '運動', cls: 'icon-sport', badgeCls: '' },
+buy: { icon: '🛒', label: '買い物', cls: 'icon-buy', badgeCls: '' },
+relax: { icon: '🧘', label: '休息', cls: 'icon-relax', badgeCls: '' },
+hobby: { icon: '🎨', label: '趣味', cls: 'icon-hobby', badgeCls: '' },
+health: { icon: '💊', label: '健康', cls: 'icon-health', badgeCls: '' },
+other: { icon: '📌', label: 'その他', cls: 'icon-sport', badgeCls: '' },
+};
+const OUTDOOR_CATS = ['sport', 'hobby'];
+
+let events = [
+{ id:1, title:'朝の散歩（30分）', time:'07:00', cat:'sport', priority:'mid', done:false, streak:5, outdoor:true },
+{ id:2, title:'食料品の買い出し', time:'10:00', cat:'buy', priority:'high', done:false, streak:0, outdoor:false },
+{ id:3, title:'ジムでトレーニング', time:'12:00', cat:'sport', priority:'high', done:false, streak:12, outdoor:false },
+{ id:4, title:'読書タイム', time:'15:00', cat:'relax', priority:'low', done:false, streak:3, outdoor:false },
+{ id:5, title:'サイクリング（河川敷）', time:'17:00', cat:'sport', priority:'mid', done:false, streak:0, outdoor:true },
+];
+let nextId = 6;
+let activeFilter = 'all'; // all | high
+let activeCat = 'all';
+let selectedCat = 'sport';
+let selectedPrio = 'low';
+
+// ── Date ─────────────────────────────────────────────────
+(function() {
+const now = new Date();
+const days = ['日','月','火','水','木','金','土'];
+document.getElementById('date-label').textContent =
+`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+})();
+
+// ── Render ────────────────────────────────────────────────
+function renderEvents() {
+const list = document.getElementById('event-list');
+list.innerHTML = '';
+
+const prioOrder = {high:0, mid:1, low:2};
+let filtered = [...events]
+.filter(e => activeFilter === 'all' || e.priority === 'high')
+.filter(e => activeCat === 'all' || e.cat === activeCat)
+.sort((a,b) => prioOrder[a.priority] - prioOrder[b.priority] || a.time.localeCompare(b.time));
+
+if (filtered.length === 0) {
+list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div><div class="empty-state-text">予定がありません。＋で追加しましょう！</div></div>`;
+return;
+}
+
+filtered.forEach((ev, i) => {
+const meta = CAT_META[ev.cat] || CAT_META.other;
+const div = document.createElement('div');
+div.className = `ev-card${ev.done ? ' done' : ''}`;
+div.style.animationDelay = `${i * 0.06}s`;
+
+const pBadge = ev.priority === 'high' ? '<span class="ev-badge badge-high">高優先</span>'
+: ev.priority === 'mid' ? '<span class="ev-badge badge-mid">中優先</span>'
+: '';
+const weatherBadge = ev.outdoor
+? '<span class="ev-badge badge-warn">☔ 雨注意</span>'
+: '';
+const streakStr = ev.streak > 0
+? `<span class="ev-streak">🔥${ev.streak}日連続</span>`
+: '';
+
+div.innerHTML = `
+<div class="ev-stripe stripe-${ev.priority}"></div>
+<div class="ev-cat-icon ${meta.cls}">${meta.icon}</div>
+<div class="ev-body">
+<div class="ev-title">${ev.title}</div>
+<div class="ev-meta">
+<span class="ev-time">${ev.time}</span>
+${pBadge}${weatherBadge}
+</div>
+</div>
+<div class="ev-right">
+<div class="ev-check${ev.done ? ' checked' : ''}" onclick="toggleDone(${ev.id},event)">${ev.done ? '✓' : ''}</div>
+${streakStr}
+</div>
+`;
+list.appendChild(div);
+});
+}
+
+// ── Interactions ──────────────────────────────────────────
+function toggleDone(id, e) {
+e.stopPropagation();
+const ev = events.find(x => x.id === id);
+if (!ev) return;
+ev.done = !ev.done;
+if (ev.done) {
+ev.streak++;
+showToast(ev.streak > 1 ? `🔥 ${ev.streak}日連続達成！` : '✅ 完了しました！');
+}
+renderEvents();
+}
+
+// ── Health bar ────────────────────────────────────────────
+let healthPct = 0;
+
+const HEALTH_COLORS = [
+'#e63946','#e63946','#f4a261','#f4a261','#f4a261',
+'#a8dadc','#2a9d8f','#2a9d8f','#2d6a4f','#2d6a4f'
+];
+const HEALTH_MSGS = [
+'今日はゆっくり休みましょう',
+'あまり無理しないで',
+'少し休憩が必要かも',
+'まあまあの体調です',
+'普通に過ごせそうです',
+'そこそこ動けます',
+'いいコンディションです！',
+'かなり調子いいです！',
+'ほぼ万全です！',
+'フルパワーで行けます！🔥',
+];
+
+function buildHealthTrack() {
+const track = document.getElementById('health-track');
+track.innerHTML = '';
+for (let i = 1; i <= 10; i++) {
+const seg = document.createElement('div');
+seg.className = 'h-seg';
+seg.dataset.val = i * 10;
+const lbl = document.createElement('span');
+lbl.className = 'h-seg-label';
+lbl.textContent = i === 10 ? '100' : '';
+seg.appendChild(lbl);
+seg.addEventListener('click', () => pickHealthPct(i * 10));
+seg.addEventListener('mouseenter', () => previewHealth(i * 10));
+seg.addEventListener('mouseleave', () => renderHealthBar(healthPct));
+track.appendChild(seg);
+}
+renderHealthBar(0);
+}
+
+function previewHealth(pct) {
+renderHealthBar(pct, true);
+}
+
+function renderHealthBar(pct, preview = false) {
+const segs = document.querySelectorAll('.h-seg');
+const filledCount = pct / 10;
+segs.forEach((seg, i) => {
+if (i < filledCount) {
+seg.classList.add('filled');
+seg.style.background = HEALTH_COLORS[i];
+seg.style.opacity = preview ? '0.6' : '1';
+} else {
+seg.classList.remove('filled');
+seg.style.background = '';
+seg.style.opacity = '1';
+}
+});
+if (preview && pct > 0) {
+const disp = document.getElementById('health-display');
+disp.textContent = pct + '%';
+disp.style.color = HEALTH_COLORS[filledCount - 1];
+}
+}
+
+function pickHealthPct(pct) {
+healthPct = pct;
+renderHealthBar(pct);
+const idx = pct / 10 - 1;
+const disp = document.getElementById('health-display');
+disp.textContent = pct + '%';
+disp.style.color = HEALTH_COLORS[idx];
+document.getElementById('health-sub').textContent = HEALTH_MSGS[idx];
+// update profile icon based on range
+const profileEmoji = pct <= 20 ? '😴' : pct <= 40 ? '😐' : pct <= 70 ? '😊' : '🔥';
+document.getElementById('profile-emoji').textContent = profileEmoji;
+showToast(`体調 ${pct}% を記録しました`);
+}
+
+function setFilter(f, el) {
+activeFilter = f;
+document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+el.classList.add('active');
+renderEvents();
+}
+
+function filterCat(cat, el) {
+activeCat = cat;
+document.querySelectorAll('.cat-tab').forEach(t => {
+t.className = 'cat-tab';
+});
+el.className = `cat-tab active-${cat}`;
+renderEvents();
+}
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.classList.add('show');
+setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showWeatherDetail() {
+showToast('☔ 明日の雨に備えて屋外予定を確認してください');
+}
+
+// ── Modal ──────────────────────────────────────────────────
+function openModal() {
+document.getElementById('overlay').classList.add('open');
+selectedCat = 'sport';
+selectedPrio = 'low';
+document.getElementById('m-title').value = '';
+document.getElementById('m-title').style.borderColor = '';
+document.getElementById('m-time').value = '09:00';
+// reset cat options
+document.querySelectorAll('#cat-grid .cat-option').forEach(o => o.className = 'cat-option');
+document.querySelector('#cat-grid [data-cat="sport"]').className = 'cat-option sel-sport';
+// reset prio
+document.querySelectorAll('.prio-btn').forEach(b => b.className = 'prio-btn');
+document.querySelector('[data-p="low"]').className = 'prio-btn sel-low';
+updateWeatherWarn();
+}
+
+function closeOverlay(e) {
+if (e.target === document.getElementById('overlay')) {
+document.getElementById('overlay').classList.remove('open');
+}
+}
+
+function selectCat(cat, el) {
+selectedCat = cat;
+document.querySelectorAll('#cat-grid .cat-option').forEach(o => o.className = 'cat-option');
+el.className = `cat-option sel-${cat}`;
+updateWeatherWarn();
+}
+
+function selectPrio(p, el) {
+selectedPrio = p;
+document.querySelectorAll('.prio-btn').forEach(b => b.className = 'prio-btn');
+el.className = `prio-btn sel-${p}`;
+}
+
+function updateWeatherWarn() {
+const box = document.getElementById('weather-warn');
+box.style.display = OUTDOOR_CATS.includes(selectedCat) ? 'flex' : 'none';
+}
+
+function addEvent() {
+const title = document.getElementById('m-title').value.trim();
+if (!title) {
+document.getElementById('m-title').style.borderColor = 'var(--high)';
+document.getElementById('m-title').focus();
+return;
+}
+events.push({
+id: nextId++,
+title,
+time: document.getElementById('m-time').value,
+cat: selectedCat,
+priority: selectedPrio,
+done: false,
+streak: 0,
+outdoor: OUTDOOR_CATS.includes(selectedCat),
+});
+document.getElementById('overlay').classList.remove('open');
+activeCat = 'all';
+activeFilter = 'all';
+document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+document.querySelectorAll('.filter-chip')[0].classList.add('active');
+document.querySelectorAll('.cat-tab').forEach(t => t.className = 'cat-tab');
+document.querySelector('#cat-tabs [data-cat="all"]').className = 'cat-tab active-all';
+renderEvents();
+showToast('✅ アクションを追加しました！');
+}
+
+renderEvents();
+buildHealthTrack();
+</script>
+
+</body>
+</html>
