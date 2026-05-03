@@ -742,7 +742,119 @@ color: var(--buy);
 border-color: var(--border);
 background: var(--card);
 color: var(--text2);
-}`n/* Week view */
+}
+
+
+/* Record view */
+.record-scroll {
+padding: 0 20px 100px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+overflow-y: auto;
+scrollbar-width: none;
+-webkit-overflow-scrolling: touch;
+flex: 1;
+min-height: 0;
+}
+.record-scroll::-webkit-scrollbar { display: none; }
+.record-card {
+background: var(--card);
+border-radius: var(--radius);
+border: 1px solid var(--border);
+box-shadow: var(--shadow);
+padding: 12px 14px;
+}
+.record-title {
+font-family: 'Outfit', sans-serif;
+font-size: 14px;
+font-weight: 700;
+color: var(--text);
+letter-spacing: -0.2px;
+margin-bottom: 10px;
+}
+.health-chart-wrap {
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: 14px;
+padding: 8px 8px 4px;
+}
+.health-chart-svg {
+width: 100%;
+height: 150px;
+display: block;
+}
+.chart-legend-row {
+display: flex;
+justify-content: space-between;
+font-size: 10px;
+color: var(--text3);
+font-weight: 600;
+padding: 2px 2px 0;
+}
+.history-list {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.history-item {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 9px 10px;
+border-radius: 12px;
+background: var(--bg);
+border: 1px solid var(--border);
+}
+.history-date {
+font-family: 'Outfit', sans-serif;
+font-size: 11px;
+color: var(--text2);
+font-weight: 600;
+min-width: 70px;
+}
+.history-main {
+flex: 1;
+min-width: 0;
+}
+.history-title {
+font-size: 12px;
+font-weight: 600;
+color: var(--text);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.streak-list {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.streak-item {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 8px;
+padding: 9px 10px;
+border-radius: 12px;
+background: var(--bg);
+border: 1px solid var(--border);
+}
+.streak-left {
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 12px;
+font-weight: 600;
+color: var(--text);
+}
+.streak-val {
+font-family: 'Outfit', sans-serif;
+font-size: 12px;
+font-weight: 800;
+color: var(--text2);
+}
+/* Week view */
 .main-views { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .view-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .view-panel[hidden] { display: none !important; }
@@ -983,6 +1095,35 @@ flex-shrink: 0;
 
 </div>
 
+<div class="view-panel" id="view-record" hidden>
+
+<div class="sec-head">
+<div class="sec-title">記録</div>
+<div class="sec-filter" style="visibility:hidden"><span class="filter-chip">　</span></div>
+</div>
+
+<div class="record-scroll">
+<div class="record-card">
+<div class="record-title">過去7日間の体調推移</div>
+<div class="health-chart-wrap">
+<svg class="health-chart-svg" id="health-chart-svg" viewBox="0 0 320 150" preserveAspectRatio="none"></svg>
+<div class="chart-legend-row" id="health-chart-labels"></div>
+</div>
+</div>
+
+<div class="record-card">
+<div class="record-title">完了した予定の履歴</div>
+<div class="history-list" id="record-history-list"></div>
+</div>
+
+<div class="record-card">
+<div class="record-title">連続記録（カテゴリー別）</div>
+<div class="streak-list" id="record-streak-list"></div>
+</div>
+</div>
+
+</div>
+
 </div>
 
 <!-- Bottom nav -->
@@ -996,7 +1137,7 @@ flex-shrink: 0;
 <div class="nav-icon">📆</div>
 <div class="nav-label">週間</div>
 </div>
-<div class="nav-item">
+<div class="nav-item" data-nav="record" onclick="setMainView('record',this)">
 <div class="nav-icon">🔥</div>
 <div class="nav-label">記録</div>
 </div>
@@ -1093,10 +1234,22 @@ let selectedPrio = 'low';
 let activeRiskIds = [];
 
 const LS_WEEK = 'soloday-week-v1';
+const LS_HEALTH = 'soloday-health-v1';
+const LS_COMPLETED = 'soloday-completed-v1';
 let weekEvents = [];
 let nextWeekId = 1;
 let modalTargetDate = null;
 let activeMainView = 'today';
+let healthLogs = [];
+let completedLogs = [];
+
+function todayKey() {
+const d = new Date();
+const y = d.getFullYear();
+const m = String(d.getMonth() + 1).padStart(2, '0');
+const day = String(d.getDate()).padStart(2, '0');
+return `${y}-${m}-${day}`;
+}
 
 function loadWeekEvents() {
 try {
@@ -1113,24 +1266,185 @@ function saveWeekEvents() {
 localStorage.setItem(LS_WEEK, JSON.stringify(weekEvents));
 }
 
+function loadRecordData() {
+try {
+const h = localStorage.getItem(LS_HEALTH);
+healthLogs = h ? JSON.parse(h) : [];
+} catch {
+healthLogs = [];
+}
+try {
+const c = localStorage.getItem(LS_COMPLETED);
+completedLogs = c ? JSON.parse(c) : [];
+} catch {
+completedLogs = [];
+}
+}
+
+function saveHealthLogs() {
+localStorage.setItem(LS_HEALTH, JSON.stringify(healthLogs));
+}
+
+function saveCompletedLogs() {
+localStorage.setItem(LS_COMPLETED, JSON.stringify(completedLogs));
+}
+
+function recordHealth(pct) {
+const date = todayKey();
+const idx = healthLogs.findIndex(x => x.date === date);
+const payload = { date, pct: Number(pct) };
+if (idx >= 0) healthLogs[idx] = payload;
+else healthLogs.push(payload);
+saveHealthLogs();
+if (activeMainView === 'record') renderRecordView();
+}
+
+function syncCompletedLogFromTodayEvent(ev) {
+const date = todayKey();
+const idx = completedLogs.findIndex(x => x.kind === 'today' && x.date === date && x.refId === ev.id);
+if (ev.done) {
+const item = { kind: 'today', refId: ev.id, date, title: ev.title, cat: ev.cat, priority: ev.priority };
+if (idx >= 0) completedLogs[idx] = item;
+else completedLogs.push(item);
+} else if (idx >= 0) {
+completedLogs.splice(idx, 1);
+}
+saveCompletedLogs();
+if (activeMainView === 'record') renderRecordView();
+}
+
+function syncCompletedLogFromWeekEvent(ev) {
+const idx = completedLogs.findIndex(x => x.kind === 'week' && x.date === ev.date && x.refId === ev.id);
+if (ev.done) {
+const item = { kind: 'week', refId: ev.id, date: ev.date, title: ev.title, cat: ev.cat, priority: ev.priority };
+if (idx >= 0) completedLogs[idx] = item;
+else completedLogs.push(item);
+} else if (idx >= 0) {
+completedLogs.splice(idx, 1);
+}
+saveCompletedLogs();
+if (activeMainView === 'record') renderRecordView();
+}
+
+function dateLabelMini(ds) {
+const p = ds.split('-').map(Number);
+return `${p[1]}/${p[2]}`;
+}
+
+function renderHealthChart7Days() {
+const svg = document.getElementById('health-chart-svg');
+const labels = document.getElementById('health-chart-labels');
+if (!svg || !labels) return;
+const days = [];
+const now = new Date();
+for (let i = 6; i >= 0; i--) {
+const d = new Date(now);
+d.setDate(now.getDate() - i);
+const y = d.getFullYear();
+const m = String(d.getMonth() + 1).padStart(2, '0');
+const dd = String(d.getDate()).padStart(2, '0');
+days.push(`${y}-${m}-${dd}`);
+}
+const map = new Map(healthLogs.map(h => [h.date, Number(h.pct)]));
+const values = days.map(d => (map.has(d) ? map.get(d) : null));
+const w = 320, top = 12, bottom = 118, left = 14, right = 14;
+const step = (w - left - right) / 6;
+let points = '';
+let circles = '';
+for (let i = 0; i < 7; i++) {
+const x = left + step * i;
+const v = values[i];
+if (v == null) continue;
+const y = top + (100 - Math.max(0, Math.min(100, v))) / 100 * (bottom - top);
+points += `${x},${y} `;
+circles += `<circle cx="${x}" cy="${y}" r="3.5" fill="#2d6a4f"></circle>`;
+}
+const grid = [0, 25, 50, 75, 100].map(v => {
+const y = top + (100 - v) / 100 * (bottom - top);
+return `<line x1="${left}" y1="${y}" x2="${w-right}" y2="${y}" stroke="#e8e4dc" stroke-width="1"/>`;
+}).join('');
+svg.innerHTML = `${grid}<polyline points="${points.trim()}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>${circles}`;
+labels.innerHTML = days.map(d => `<span>${dateLabelMini(d)}</span>`).join('');
+}
+
+function computeCategoryStreak(cat) {
+const dateSet = new Set(completedLogs.filter(x => x.cat === cat).map(x => x.date));
+let streak = 0;
+const d = new Date();
+for (;;) {
+const y = d.getFullYear();
+const m = String(d.getMonth() + 1).padStart(2, '0');
+const dd = String(d.getDate()).padStart(2, '0');
+const key = `${y}-${m}-${dd}`;
+if (!dateSet.has(key)) break;
+streak++;
+d.setDate(d.getDate() - 1);
+}
+return streak;
+}
+
+function renderRecordView() {
+renderHealthChart7Days();
+const hist = document.getElementById('record-history-list');
+const streak = document.getElementById('record-streak-list');
+if (!hist || !streak) return;
+const sorted = [...completedLogs].sort((a, b) => {
+if (a.date === b.date) {
+const pa = a.priority === 'high' ? 0 : a.priority === 'mid' ? 1 : 2;
+const pb = b.priority === 'high' ? 0 : b.priority === 'mid' ? 1 : 2;
+return pa - pb;
+}
+return a.date < b.date ? 1 : -1;
+}).slice(0, 24);
+if (!sorted.length) {
+hist.innerHTML = '<div class="empty-state-text">完了履歴はまだありません</div>';
+} else {
+hist.innerHTML = sorted.map(item => {
+const meta = CAT_META[item.cat] || CAT_META.other;
+const pr = item.priority === 'high'
+? '<span class="ev-badge badge-high">高</span>'
+: item.priority === 'mid'
+? '<span class="ev-badge badge-mid">中</span>'
+: '<span class="ev-badge badge-low">低</span>';
+return `<div class="history-item"><div class="history-date">${dateLabelMini(item.date)}</div><div class="ev-cat-icon ${meta.cls}" style="width:28px;height:28px;font-size:14px;border-radius:10px;">${meta.icon}</div><div class="history-main"><div class="history-title">${item.title}</div><div class="ev-meta">${pr}<span class="ev-time">${meta.label}</span></div></div></div>`;
+}).join('');
+}
+const cats = ['sport', 'buy', 'relax', 'hobby', 'health'];
+streak.innerHTML = cats.map(cat => {
+const meta = CAT_META[cat];
+const val = computeCategoryStreak(cat);
+return `<div class="streak-item"><div class="streak-left"><span class="ev-cat-icon ${meta.cls}" style="width:28px;height:28px;font-size:14px;border-radius:10px;">${meta.icon}</span><span>${meta.label}</span></div><div class="streak-val">🔥 ${val}日</div></div>`;
+}).join('');
+}
+
 function setMainView(view, el) {
 activeMainView = view;
 const todayP = document.getElementById('view-today');
 const weekP = document.getElementById('view-week');
+const recordP = document.getElementById('view-record');
 const fab = document.getElementById('fab-today');
 document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
 el.classList.add('active');
 if (view === 'today') {
 todayP.hidden = false;
 weekP.hidden = true;
+recordP.hidden = true;
 fab.style.display = '';
 if (healthPct <= 40) evaluateLowHealthRisk();
-} else {
+} else if (view === 'week') {
 todayP.hidden = true;
 weekP.hidden = false;
+recordP.hidden = true;
 fab.style.display = 'none';
 renderRiskAlert([]);
 renderWeekCalendar();
+} else {
+todayP.hidden = true;
+weekP.hidden = true;
+recordP.hidden = false;
+fab.style.display = 'none';
+renderRiskAlert([]);
+renderRecordView();
 }
 }
 
@@ -1236,6 +1550,7 @@ e.stopPropagation();
 const ev = weekEvents.find(x => x.id === id);
 if (!ev) return;
 ev.done = !ev.done;
+syncCompletedLogFromWeekEvent(ev);
 saveWeekEvents();
 renderWeekCalendar();
 }
@@ -1493,6 +1808,7 @@ if (ev.done) {
 ev.streak++;
 showToast(ev.streak > 1 ? `🔥 ${ev.streak}日連続達成！` : '✅ 完了しました！');
 }
+syncCompletedLogFromTodayEvent(ev);
 renderEvents();
 evaluateLowHealthRisk();
 }
@@ -1614,6 +1930,7 @@ document.getElementById('health-sub').textContent = HEALTH_MSGS[idx];
 const profileEmoji = pct <= 20 ? '😴' : pct <= 40 ? '😐' : pct <= 70 ? '😊' : '🔥';
 document.getElementById('profile-emoji').textContent = profileEmoji;
 showToast(`体調 ${pct}% を記録しました`);
+recordHealth(pct);
 evaluateLowHealthRisk();
 }
 
@@ -1768,6 +2085,7 @@ showToast('✅ アクションを追加しました！');
 }
 
 loadWeekEvents();
+loadRecordData();
 renderEvents();
 buildHealthTrack();
 initWeather();
