@@ -349,7 +349,11 @@ transform: translateY(-1px);
 .ev-card.done {
 opacity: 0.5;
 }
-.ev-card.done .ev-title {
+.ev-card.postponed {
+opacity: 0.46;
+}
+.ev-card.done .ev-title,
+.ev-card.postponed .ev-title {
 text-decoration: line-through;
 }
 
@@ -411,6 +415,7 @@ letter-spacing: 0.3px;
 .badge-low { background: var(--sport-light); color: var(--sport); }
 .badge-warn { background: #fde8e0; color: var(--buy); }
 .badge-ok { background: #fff8e7; color: var(--sun); }
+.badge-postponed { background: var(--cream); color: var(--text2); }
 
 .ev-right {
 display: flex;
@@ -674,7 +679,70 @@ opacity: 1;
 transform: translateX(-50%) translateY(0);
 }
 
-/* Week view */
+
+/* Low health risk prompt */
+.risk-alert {
+position: absolute;
+left: 16px;
+right: 16px;
+top: 126px;
+background: var(--card);
+border: 1px solid rgba(193,68,14,0.2);
+border-radius: 18px;
+box-shadow: var(--shadow-lg);
+padding: 14px 14px 12px;
+z-index: 120;
+display: none;
+}
+.risk-alert.open { display: block; animation: slideUp 0.3s ease both; }
+.risk-head {
+display: flex;
+gap: 8px;
+align-items: flex-start;
+margin-bottom: 9px;
+}
+.risk-icon { font-size: 18px; line-height: 1; }
+.risk-title {
+font-size: 13px;
+font-weight: 700;
+line-height: 1.5;
+color: var(--buy);
+}
+.risk-list {
+margin: 0 0 10px 0;
+padding-left: 18px;
+color: var(--text2);
+font-size: 12px;
+line-height: 1.55;
+max-height: 86px;
+overflow: auto;
+}
+.risk-actions {
+display: flex;
+gap: 8px;
+}
+.risk-btn {
+flex: 1;
+border: 1.5px solid var(--border);
+border-radius: 12px;
+padding: 10px 8px;
+font-size: 12px;
+font-weight: 700;
+font-family: 'Noto Sans JP', sans-serif;
+cursor: pointer;
+background: var(--bg);
+color: var(--text2);
+}
+.risk-btn.delay {
+border-color: rgba(193,68,14,0.25);
+background: #fde8e0;
+color: var(--buy);
+}
+.risk-btn.keep {
+border-color: var(--border);
+background: var(--card);
+color: var(--text2);
+}`n/* Week view */
 .main-views { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .view-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .view-panel[hidden] { display: none !important; }
@@ -938,6 +1006,20 @@ flex-shrink: 0;
 </div>
 </div>
 
+<!-- Low health risk alert -->
+
+<div class="risk-alert" id="risk-alert">
+<div class="risk-head">
+<div class="risk-icon">⚠️</div>
+<div class="risk-title">体調が優れないようです。以下の予定を変更しますか？</div>
+</div>
+<ul class="risk-list" id="risk-list"></ul>
+<div class="risk-actions">
+<button type="button" class="risk-btn delay" onclick="postponeRiskEvents()">今日は延期</button>
+<button type="button" class="risk-btn keep" onclick="keepRiskEvents()">予定通り行う</button>
+</div>
+</div>
+
 <!-- Toast -->
 
 <div class="toast" id="toast"></div>
@@ -1008,6 +1090,7 @@ let activeFilter = 'all'; // all | high
 let activeCat = 'all';
 let selectedCat = 'sport';
 let selectedPrio = 'low';
+let activeRiskIds = [];
 
 const LS_WEEK = 'soloday-week-v1';
 let weekEvents = [];
@@ -1041,10 +1124,12 @@ if (view === 'today') {
 todayP.hidden = false;
 weekP.hidden = true;
 fab.style.display = '';
+if (healthPct <= 40) evaluateLowHealthRisk();
 } else {
 todayP.hidden = true;
 weekP.hidden = false;
 fab.style.display = 'none';
+renderRiskAlert([]);
 renderWeekCalendar();
 }
 }
@@ -1363,7 +1448,7 @@ return;
 filtered.forEach((ev, i) => {
 const meta = CAT_META[ev.cat] || CAT_META.other;
 const div = document.createElement('div');
-div.className = `ev-card${ev.done ? ' done' : ''}`;
+div.className = `ev-card${ev.done ? ' done' : ''}${ev.postponed ? ' postponed' : ''}`;
 div.style.animationDelay = `${i * 0.06}s`;
 
 const pBadge = ev.priority === 'high' ? '<span class="ev-badge badge-high">高優先</span>'
@@ -1371,6 +1456,9 @@ const pBadge = ev.priority === 'high' ? '<span class="ev-badge badge-high">高�
 : '';
 const weatherBadge = ev.outdoor
 ? '<span class="ev-badge badge-warn">☔ 雨注意</span>'
+: '';
+const postponeBadge = ev.postponed
+? '<span class="ev-badge badge-postponed">延期</span>'
 : '';
 const streakStr = ev.streak > 0
 ? `<span class="ev-streak">🔥${ev.streak}日連続</span>`
@@ -1383,7 +1471,7 @@ div.innerHTML = `
 <div class="ev-title">${ev.title}</div>
 <div class="ev-meta">
 <span class="ev-time">${ev.time}</span>
-${pBadge}${weatherBadge}
+${pBadge}${weatherBadge}${postponeBadge}
 </div>
 </div>
 <div class="ev-right">
@@ -1406,6 +1494,7 @@ ev.streak++;
 showToast(ev.streak > 1 ? `🔥 ${ev.streak}日連続達成！` : '✅ 完了しました！');
 }
 renderEvents();
+evaluateLowHealthRisk();
 }
 
 // ── Health bar ────────────────────────────────────────────
@@ -1472,6 +1561,47 @@ disp.style.color = HEALTH_COLORS[filledCount - 1];
 }
 }
 
+function findHardSportEventsToday() {
+return events.filter(ev => ev.priority === 'high' && ev.cat === 'sport' && !ev.done && !ev.postponed);
+}
+
+function renderRiskAlert(targets) {
+const alert = document.getElementById('risk-alert');
+const list = document.getElementById('risk-list');
+if (!targets.length) {
+alert.classList.remove('open');
+activeRiskIds = [];
+return;
+}
+activeRiskIds = targets.map(t => t.id);
+list.innerHTML = targets.map(t => `<li>${t.time}　${t.title}</li>`).join('');
+alert.classList.add('open');
+}
+
+function evaluateLowHealthRisk() {
+if (healthPct > 40) {
+renderRiskAlert([]);
+return;
+}
+renderRiskAlert(findHardSportEventsToday());
+}
+
+function postponeRiskEvents() {
+if (!activeRiskIds.length) return;
+const idSet = new Set(activeRiskIds);
+events.forEach(ev => {
+if (idSet.has(ev.id)) ev.postponed = true;
+});
+renderRiskAlert([]);
+renderEvents();
+showToast('📌 ハードな運動予定を延期にしました');
+}
+
+function keepRiskEvents() {
+renderRiskAlert([]);
+showToast('予定はそのままにしました。無理のない範囲で進めましょう');
+}
+
 function pickHealthPct(pct) {
 healthPct = pct;
 renderHealthBar(pct);
@@ -1484,6 +1614,7 @@ document.getElementById('health-sub').textContent = HEALTH_MSGS[idx];
 const profileEmoji = pct <= 20 ? '😴' : pct <= 40 ? '😐' : pct <= 70 ? '😊' : '🔥';
 document.getElementById('profile-emoji').textContent = profileEmoji;
 showToast(`体調 ${pct}% を記録しました`);
+evaluateLowHealthRisk();
 }
 
 function setFilter(f, el) {
@@ -1620,6 +1751,7 @@ time: timeVal,
 cat: selectedCat,
 priority: selectedPrio,
 done: false,
+postponed: false,
 streak: 0,
 outdoor: OUTDOOR_CATS.includes(selectedCat),
 });
@@ -1631,6 +1763,7 @@ document.querySelectorAll('.filter-chip')[0].classList.add('active');
 document.querySelectorAll('.cat-tab').forEach(t => t.className = 'cat-tab');
 document.querySelector('#cat-tabs [data-cat="all"]').className = 'cat-tab active-all';
 renderEvents();
+evaluateLowHealthRisk();
 showToast('✅ アクションを追加しました！');
 }
 
